@@ -928,6 +928,27 @@ PrefabInstance:
       insertIndex: -1
       addedObject: {fileID: 1099771860}
   m_SourcePrefab: {fileID: 100100000, guid: 2d3a85ecde41a8246a79669975912b74, type: 3}
+--- !u!1 &746743472 stripped
+GameObject:
+  m_CorrespondingSourceObject: {fileID: 8616685848737228372, guid: c5efc39a8aaf6e64ea40e9ad573e9b47, type: 3}
+  m_PrefabInstance: {fileID: 1959456440}
+  m_PrefabAsset: {fileID: 0}
+--- !u!114 &746743479
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 746743472}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 559369676e876e8428f5f206f3a5d13c, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::BulletTimeController
+  slowTimeScale: 0.3
+  normalTimeScale: 1
+  maxDuration: 3
+  cooldownTime: 5
 --- !u!1 &832575517
 GameObject:
   m_ObjectHideFlags: 0
@@ -1601,6 +1622,8 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: e19b5054f2d341c4284a4ee51b39fdff, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::Robot
+  maxHealth: 50
+  showDebugLogs: 1
 --- !u!136 &1820484780
 CapsuleCollider:
   m_ObjectHideFlags: 0
@@ -1834,7 +1857,10 @@ PrefabInstance:
     - targetCorrespondingSourceObject: {fileID: 4135013735270702856, guid: c5efc39a8aaf6e64ea40e9ad573e9b47, type: 3}
       insertIndex: -1
       addedObject: {fileID: 1838696813}
-    m_AddedComponents: []
+    m_AddedComponents:
+    - targetCorrespondingSourceObject: {fileID: 8616685848737228372, guid: c5efc39a8aaf6e64ea40e9ad573e9b47, type: 3}
+      insertIndex: -1
+      addedObject: {fileID: 746743479}
   m_SourcePrefab: {fileID: 100100000, guid: c5efc39a8aaf6e64ea40e9ad573e9b47, type: 3}
 --- !u!1001 &1982668843
 PrefabInstance:

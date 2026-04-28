@@ -1,28 +1,71 @@
 using UnityEngine;
-using StarterAssets;
-using UnityEngine.AI;
 
 public class Robot : MonoBehaviour
 {
-    FirstPersonController player;
-    NavMeshAgent agent;
+    [Header("Health Settings")]
+    public float maxHealth = 50f;
+    private float currentHealth;
 
-    // Awake: Grab components ON this GameObject
+    [Header("Optional Debug")]
+    public bool showDebugLogs = true;
+
     void Awake()
     {
-        agent = GetComponent<NavMeshAgent>();
+        currentHealth = maxHealth;
     }
 
-    // Start: grab references from OTHER GameObjects
-    void Start()
+    // Called when robot takes damage
+    public void TakeDamage(float amount)
     {
-        player = FindFirstObjectByType<FirstPersonController>();
+        currentHealth -= amount;
+
+        if (showDebugLogs)
+        {
+            Debug.Log(name + " took damage. Health: " + currentHealth);
+        }
+
+        if (currentHealth <= 0)
+        {
+            Die();
+        }
     }
 
-    // Update destination every frame so robot follows player
-    void Update()
+    // Get current health
+    public float GetCurrentHealth()
     {
-        agent.SetDestination(player.transform.position);
+        return currentHealth;
     }
 
+    // Get health percentage 
+    public float GetHealthPercent()
+    {
+        return currentHealth / maxHealth;
+    }
+
+    // Death logic
+    void Die()
+    {
+        if (showDebugLogs)
+        {
+            Debug.Log(name + " died.");
+        }
+
+        // Trigger kill chain system
+        if (KillChainManager.Instance != null)
+        {
+            KillChainManager.Instance.RegisterKill();
+        }
+
+        if (LevelManager.Instance != null)
+        {
+            LevelManager.Instance.EnemyKilled();
+        }
+
+        Destroy(gameObject);
+    }
+
+    public void ResetHealth()
+    {
+        currentHealth = maxHealth;
+    }
 }
