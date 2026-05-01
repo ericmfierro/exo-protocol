@@ -1,5 +1,12 @@
 using UnityEngine;
+using UnityEngine.Events;
 
+
+// Added
+// Score tracking with multiplier
+// Multiplier that scales with chain length
+// UnityEvents so the HUD can see
+// ChainTimeRemaining for timer bar UI
 public class KillChainManager : MonoBehaviour
 {
     public static KillChainManager Instance;
@@ -7,12 +14,28 @@ public class KillChainManager : MonoBehaviour
     [Header("Combo Settings")]
     public float comboWindow = 3f;
 
-    private int comboCount = 0;
-    private float comboTimer = 0f;
-
     [Header("Rewards")]
     public float baseHealthGain = 10f;
     public int baseAmmoGain = 5;
+
+    [Header("Score")]
+    [SerializeField] int baseScorePerKill = 100;
+    [SerializeField] int maxMultiplier = 8;
+
+    // States
+    public int ComboCount { get; private set; }
+    public int Multiplier { get; private set; } = 1;
+    public float ChainTimeRemaining { get; private set; }
+    public int TotalScore { get; private set; }
+
+    //  UI events
+    public UnityEvent<int> OnChainUpdated;        // passes combo count
+    public UnityEvent<int> OnMultiplierChanged;   // passes multiplier
+    public UnityEvent<int> OnScoreChanged;        // passes total score
+    public UnityEvent OnChainBroken;
+
+    private float comboTimer = 0f;
+    private bool chainActive;
 
     void Awake()
     {
@@ -21,11 +44,12 @@ public class KillChainManager : MonoBehaviour
 
     void Update()
     {
-        if (comboTimer > 0)
-        {
-            comboTimer -= Time.deltaTime;
-        }
-        else
+        if (!chainActive) return;
+
+        comboTimer -= Time.deltaTime;
+        ChainTimeRemaining = Mathf.Max(0f, comboTimer);
+
+        if (comboTimer <= 0f)
         {
             ResetCombo();
         }
@@ -34,27 +58,45 @@ public class KillChainManager : MonoBehaviour
     // CALL THIS WHEN ENEMY DIES
     public void RegisterKill()
     {
-        comboCount++;
+        ComboCount++;
         comboTimer = comboWindow;
+        chainActive = true;
 
-        float healthGained = baseHealthGain * comboCount;
-        int ammoGained = baseAmmoGain * comboCount;
+        // Multiplier doubles at chains 2, 4, 8
+        Multiplier = Mathf.Min(1 << Mathf.FloorToInt(Mathf.Log(Mathf.Max(ComboCount, 1), 2)), maxMultiplier);
 
-        Debug.Log("Combo: " + comboCount +
-                  " | +Health: " + healthGained +
-                  " | +Ammo: " + ammoGained);
+        // Score
+        int killScore = baseScorePerKill * Multiplier;
+        TotalScore += killScore;
 
+        // Rewards 
+        float healthGained = baseHealthGain * Multiplier;
+        int ammoGained = baseAmmoGain * Multiplier;
         GiveRewards(healthGained, ammoGained);
+
+        // Fire events for HUD
+        OnChainUpdated?.Invoke(ComboCount);
+        OnMultiplierChanged?.Invoke(Multiplier);
+        OnScoreChanged?.Invoke(TotalScore);
+
+        Debug.Log($"CHAIN x{ComboCount} | x{Multiplier} MULT | +{healthGained} HP | +{ammoGained} Ammo | Score: {TotalScore}");
     }
 
     void ResetCombo()
     {
-        if (comboCount > 0)
+        if (ComboCount > 0)
         {
-            Debug.Log("Combo Ended at: " + comboCount);
+            Debug.Log("Chain ended at: " + ComboCount);
         }
 
-        comboCount = 0;
+        chainActive = false;
+        ComboCount = 0;
+        Multiplier = 1;
+        ChainTimeRemaining = 0f;
+
+        OnChainBroken?.Invoke();
+        OnChainUpdated?.Invoke(0);
+        OnMultiplierChanged?.Invoke(1);
     }
 
     void GiveRewards(float health, int ammo)
