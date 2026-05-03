@@ -1,4 +1,5 @@
 using UnityEngine;
+using UnityEngine.UI;
 
 public class Robot : MonoBehaviour
 {
@@ -6,12 +7,24 @@ public class Robot : MonoBehaviour
     public float maxHealth = 50f;
     private float currentHealth;
 
+    [Header("Health Bar")]
+    [SerializeField] Slider healthSlider;
+
     [Header("Optional Debug")]
     public bool showDebugLogs = true;
 
     void Awake()
     {
         currentHealth = maxHealth;
+    }
+
+    void Start()
+    {
+        if (healthSlider != null)
+        {
+            healthSlider.maxValue = maxHealth;
+            healthSlider.value = currentHealth;
+        }
     }
 
     // Called when robot takes damage
@@ -22,6 +35,11 @@ public class Robot : MonoBehaviour
         if (showDebugLogs)
         {
             Debug.Log(name + " took damage. Health: " + currentHealth);
+        }
+
+        if (healthSlider != null)
+        {
+            healthSlider.value = currentHealth;
         }
 
         if (currentHealth <= 0)

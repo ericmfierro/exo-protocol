@@ -4,7 +4,8 @@ using UnityEngine;
 public class Weapon : MonoBehaviour
 {
     [SerializeField] float damage = 25f;
-    [SerializeField] float fireRate = 0.5f; // seconds between shots
+    [SerializeField] float fireRate = 0.5f;
+    [SerializeField] GameObject hitEffect;
 
     StarterAssetsInputs starterAssetsInputs;
     float nextTimeToFire = 0f;
@@ -38,8 +39,19 @@ public class Weapon : MonoBehaviour
             out hit,
             Mathf.Infinity))
         {
-            Health health = hit.collider.GetComponent<Health>();
+            if (hitEffect != null)
+            {
+                Instantiate(hitEffect, hit.point, Quaternion.LookRotation(hit.normal));
+            }
 
+            Robot robot = hit.collider.GetComponent<Robot>();
+            if (robot != null)
+            {
+                robot.TakeDamage(damage);
+                return;
+            }
+
+            Health health = hit.collider.GetComponent<Health>();
             if (health != null)
             {
                 health.TakeDamage(damage);
