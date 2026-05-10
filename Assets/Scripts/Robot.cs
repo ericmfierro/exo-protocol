@@ -3,87 +3,67 @@ using UnityEngine.UI;
 
 public class Robot : MonoBehaviour
 {
-    [Header("Health Settings")]
+    [Header("Health")]
     public float maxHealth = 50f;
+
+    [SerializeField]
+    private Slider healthSlider;
+
     private float currentHealth;
 
-    [Header("Health Bar")]
-    [SerializeField] Slider healthSlider;
+    private Animator anim;
 
-    [Header("Optional Debug")]
-    public bool showDebugLogs = true;
-
-    void Awake()
-    {
-        currentHealth = maxHealth;
-    }
+    private bool isDead = false;
 
     void Start()
     {
-        if (healthSlider != null)
-        {
-            healthSlider.maxValue = maxHealth;
-            healthSlider.value = currentHealth;
-        }
+        currentHealth = maxHealth;
+
+        anim = GetComponent<Animator>();
+
+        UpdateHealthBar();
     }
 
-    // Called when robot takes damage
-    public void TakeDamage(float amount)
+    public void TakeDamage(float damage)
     {
-        currentHealth -= amount;
+        if (isDead)
+            return;
 
-        if (showDebugLogs)
-        {
-            Debug.Log(name + " took damage. Health: " + currentHealth);
-        }
+        currentHealth -= damage;
 
-        if (healthSlider != null)
-        {
-            healthSlider.value = currentHealth;
-        }
+        UpdateHealthBar();
 
-        if (currentHealth <= 0)
+        if (currentHealth <= 0f)
         {
             Die();
         }
     }
 
-    // Get current health
-    public float GetCurrentHealth()
-    {
-        return currentHealth;
-    }
-
-    // Get health percentage 
+    // IMPORTANT:
+    // Needed by EliteAI
     public float GetHealthPercent()
     {
         return currentHealth / maxHealth;
     }
 
-    // Death logic
-    void Die()
+    void UpdateHealthBar()
     {
-        if (showDebugLogs)
+        if (healthSlider != null)
         {
-            Debug.Log(name + " died.");
+            healthSlider.value =
+                currentHealth / maxHealth;
         }
-
-        // Trigger kill chain system
-        if (KillChainManager.Instance != null)
-        {
-            KillChainManager.Instance.RegisterKill();
-        }
-
-        if (LevelManager.Instance != null)
-        {
-            LevelManager.Instance.EnemyKilled();
-        }
-
-        Destroy(gameObject);
     }
 
-    public void ResetHealth()
+    void Die()
     {
-        currentHealth = maxHealth;
+        isDead = true;
+
+        if (anim != null)
+        {
+            anim.SetBool("IsDead", true);
+        }
+
+        Destroy(gameObject, 3f);
     }
 }
