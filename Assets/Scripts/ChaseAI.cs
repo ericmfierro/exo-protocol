@@ -6,24 +6,54 @@ public class ChaseAI : MonoBehaviour
 {
     public float detectionRange = 20f;
 
-    NavMeshAgent agent;
-    FirstPersonController player;
+    private Transform player;
+    private NavMeshAgent agent;
+    private EnemyShooter shooter;
 
     void Start()
     {
         agent = GetComponent<NavMeshAgent>();
-        player = FindFirstObjectByType<FirstPersonController>();
+        shooter = GetComponent<EnemyShooter>();
+
+        // Prevent NavMeshAgent from fighting rotation
+        if (agent != null)
+        {
+            agent.updateRotation = false;
+        }
+
+        // Auto-find player
+        FirstPersonController fpc =
+            FindFirstObjectByType<FirstPersonController>();
+
+        if (fpc != null)
+        {
+            player = fpc.transform;
+        }
     }
 
     void Update()
     {
-        if (player == null || agent == null) return;
+        if (player == null || agent == null)
+            return;
 
-        float distance = Vector3.Distance(transform.position, player.transform.position);
+        float distance =
+            Vector3.Distance(transform.position, player.position);
 
-        if (distance < detectionRange)
+        // If enemy is shooting, stop chasing
+        if (shooter != null &&
+            distance <= shooter.attackRange)
         {
-            agent.SetDestination(player.transform.position);
+            agent.isStopped = true;
+            return;
+        }
+
+        // Resume movement
+        agent.isStopped = false;
+
+        // Chase player
+        if (distance <= detectionRange)
+        {
+            agent.SetDestination(player.position);
         }
     }
 }
