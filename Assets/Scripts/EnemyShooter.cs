@@ -25,6 +25,10 @@ public class EnemyShooter : MonoBehaviour
     [Header("Effects")]
     public ParticleSystem muzzleFlash;
 
+    [Header("Audio")]
+    public AudioSource gunAudioSource;
+    public AudioClip firingClip;
+
     [Header("Movement")]
     public bool stopMovementWhileFiring = true;
 
@@ -78,15 +82,16 @@ public class EnemyShooter : MonoBehaviour
         if (player == null)
         {
             StopCombatAnimations();
+            StopGunAudio();
             return;
         }
 
         // PLAYER DEAD
-        // Change "currentHealth" if needed
         if (playerStats != null &&
             playerStats.currentHealth <= 0)
         {
             StopCombatAnimations();
+            StopGunAudio();
             return;
         }
 
@@ -99,7 +104,7 @@ public class EnemyShooter : MonoBehaviour
         bool shouldAttack =
             distance <= attackRange;
 
-        // ONLY combat animation state now
+        // Combat animation state
         anim.SetBool(
             "Fire",
             shouldAttack
@@ -116,6 +121,24 @@ public class EnemyShooter : MonoBehaviour
 
             RotateTowardPlayer();
 
+            // START GUN AUDIO LOOP
+            if (gunAudioSource != null &&
+                firingClip != null)
+            {
+                if (!gunAudioSource.isPlaying)
+                {
+                    gunAudioSource.clip =
+                        firingClip;
+
+                    gunAudioSource.loop = true;
+
+                    gunAudioSource.pitch =
+                        Random.Range(0.95f, 1.05f);
+
+                    gunAudioSource.Play();
+                }
+            }
+
             // Automatic fire timing
             if (Time.time >= nextFireTime)
             {
@@ -129,6 +152,7 @@ public class EnemyShooter : MonoBehaviour
         else
         {
             StopCombatAnimations();
+            StopGunAudio();
         }
     }
 
@@ -249,6 +273,15 @@ public class EnemyShooter : MonoBehaviour
         if (agent != null)
         {
             agent.isStopped = false;
+        }
+    }
+
+    void StopGunAudio()
+    {
+        if (gunAudioSource != null &&
+            gunAudioSource.isPlaying)
+        {
+            gunAudioSource.Stop();
         }
     }
 }
