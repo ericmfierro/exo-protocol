@@ -2252,6 +2252,7 @@ GameObject:
   - component: {fileID: 4133550648090817099}
   - component: {fileID: 2842096186687117502}
   - component: {fileID: 3022603569414155252}
+  - component: {fileID: -1200920164453614508}
   m_Layer: 0
   m_Name: NPC
   m_TagString: Untagged
@@ -2313,7 +2314,7 @@ NavMeshAgent:
   m_Enabled: 1
   m_AgentTypeID: 0
   m_Radius: 0.4
-  m_Speed: 3.5
+  m_Speed: 3
   m_Acceleration: 8
   avoidancePriority: 50
   m_AngularSpeed: 120
@@ -2348,6 +2349,25 @@ CapsuleCollider:
   m_Height: 1.9263699
   m_Direction: 1
   m_Center: {x: 0, y: 0.90505683, z: 0}
+--- !u!114 &-1200920164453614508
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 7275193639981314699}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 44e14db585a39534998ac9180f77a268, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::NPCController
+  wanderRadius: 10
+  wanderTime: 5
+  fleeDistance: 8
+  walkSpeed: 2
+  sprintSpeed: 3
+  maxHealth: 50
+  damping: 0.15
 --- !u!1 &7395585178176782428
 GameObject:
   m_ObjectHideFlags: 0
