@@ -11,5 +11,7 @@ its limits, and decide whether to revive at the cost of your sanity or <br>
 restart from scratch. Every death is a decision. Every kill chain is a rush. <br>
 <br>
 Youtube Link (DEMO): https://www.youtube.com/watch?v=vV9sd3yLf2w
-
+<br>
+<br>
+Exe file: https://michellereyes04.itch.io/exo-protocol<br>
 
