@@ -123,3 +123,24 @@ There is no active host, join, lobby, relay, or networked player-spawn system ye
   <li>Click <b>Start</b> to load the main scene.</li>
   <li>Play locally as a single-player experience.</li>
 </ol>
+
+
+<h2>Asset Attributions</h2>
+<h3>Included Packages & Assets</h3>
+<ul>
+  <li>Unity Starter Assets – First Person Controller</li>
+  <li>TextMesh Pro</li>
+  <li>Unity Universal Render Pipeline (URP)</li>
+  <li>Unity AI Navigation</li>
+  <li>Cinemachine</li>
+  <li>GDTV Sharp Shooter Assets</li>
+  <li>Terrain demo and environment assets located under <b>Assets/TerrainDemoScene_URP</b></li>
+  <li>Custom or downloaded weapon, soldier, NPC, pickup, and audio assets located under:
+    <ul>
+      <li><b>Assets/Models</b></li>
+      <li><b>Assets/Prefabs</b></li>
+      <li><b>Assets/Audio</b></li>
+    </ul>
+  </li>
+</ul>
+
