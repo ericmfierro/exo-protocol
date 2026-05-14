@@ -1,4 +1,5 @@
 using UnityEngine;
+using UnityEngine.Events;
 using System.Collections.Generic;
 
 public class SanitySystem : MonoBehaviour
@@ -6,6 +7,9 @@ public class SanitySystem : MonoBehaviour
     [Header("Sanity")]
     public float maxSanity = 100f;
     public float currentSanity = 100f;
+
+    public UnityEvent<float, float> OnSanityChanged =
+        new UnityEvent<float, float>(); // current, max
 
     [Header("Passive Drain")]
     public float passiveDrainRate = 1f;
@@ -27,12 +31,27 @@ public class SanitySystem : MonoBehaviour
 
     void Start()
     {
+        currentSanity =
+            Mathf.Clamp(
+                currentSanity,
+                0f,
+                maxSanity
+            );
+
+        OnSanityChanged?.Invoke(
+            currentSanity,
+            maxSanity
+        );
+
         // IMMEDIATE FIRST EVENT CHECK
         nextPsychosisTime = 0f;
     }
 
     void Update()
     {
+        float previousSanity =
+            currentSanity;
+
         // PASSIVE SANITY DRAIN
         currentSanity -=
             passiveDrainRate *
@@ -44,6 +63,16 @@ public class SanitySystem : MonoBehaviour
                 0f,
                 maxSanity
             );
+
+        if (!Mathf.Approximately(
+                previousSanity,
+                currentSanity))
+        {
+            OnSanityChanged?.Invoke(
+                currentSanity,
+                maxSanity
+            );
+        }
 
         HandlePsychosis();
 
@@ -166,26 +195,27 @@ public class SanitySystem : MonoBehaviour
     // REDUCE SANITY
     public void ReduceSanity(float amount)
     {
-        currentSanity -= amount;
-
-        currentSanity =
-            Mathf.Clamp(
-                currentSanity,
-                0f,
-                maxSanity
-            );
+        SetSanity(currentSanity - amount);
     }
 
     // RESTORE SANITY
     public void RestoreSanity(float amount)
     {
-        currentSanity += amount;
+        SetSanity(currentSanity + amount);
+    }
 
+    void SetSanity(float value)
+    {
         currentSanity =
             Mathf.Clamp(
-                currentSanity,
+                value,
                 0f,
                 maxSanity
             );
+
+        OnSanityChanged?.Invoke(
+            currentSanity,
+            maxSanity
+        );
     }
 }

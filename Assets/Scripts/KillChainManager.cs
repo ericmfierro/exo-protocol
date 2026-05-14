@@ -1,5 +1,6 @@
 using UnityEngine;
 using UnityEngine.Events;
+using UnityEngine.SceneManagement;
 
 
 // Added
@@ -22,11 +23,16 @@ public class KillChainManager : MonoBehaviour
     [SerializeField] int baseScorePerKill = 100;
     [SerializeField] int maxMultiplier = 8;
 
+    [Header("Win Condition")]
+    [SerializeField] int killsToWin = 10;
+    [SerializeField] int wonSceneIndex = 3;
+
     // States
     public int ComboCount { get; private set; }
     public int Multiplier { get; private set; } = 1;
     public float ChainTimeRemaining { get; private set; }
     public int TotalScore { get; private set; }
+    public int TotalKills { get; private set; }
 
     //  UI events
     public UnityEvent<int> OnChainUpdated;        // passes combo count
@@ -36,6 +42,7 @@ public class KillChainManager : MonoBehaviour
 
     private float comboTimer = 0f;
     private bool chainActive;
+    private bool winStarted;
 
     void Awake()
     {
@@ -58,6 +65,9 @@ public class KillChainManager : MonoBehaviour
     // CALL THIS WHEN ENEMY DIES
     public void RegisterKill()
     {
+        if (winStarted) return;
+
+        TotalKills++;
         ComboCount++;
         comboTimer = comboWindow;
         chainActive = true;
@@ -80,6 +90,19 @@ public class KillChainManager : MonoBehaviour
         OnScoreChanged?.Invoke(TotalScore);
 
         Debug.Log($"CHAIN x{ComboCount} | x{Multiplier} MULT | +{healthGained} HP | +{ammoGained} Ammo | Score: {TotalScore}");
+
+        if (TotalKills >= killsToWin)
+        {
+            LoadWinScene();
+        }
+    }
+
+    void LoadWinScene()
+    {
+        if (winStarted) return;
+
+        winStarted = true;
+        SceneManager.LoadScene(wonSceneIndex);
     }
 
     void ResetCombo()

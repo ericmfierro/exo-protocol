@@ -61,13 +61,6 @@ public class EnemyShooter : MonoBehaviour
             return;
         }
 
-        if (playerStats != null &&
-            playerStats.currentHealth <= 0)
-        {
-            StopCombat();
-            return;
-        }
-
         float distance =
             Vector3.Distance(transform.position, player.position);
 

@@ -5,6 +5,8 @@ public class Weapon : MonoBehaviour
     [Header("Combat")]
     [SerializeField] float damage = 25f;
     [SerializeField] float fireRate = 0.1f;
+    [SerializeField] int ammoPerShot = 1;
+    [SerializeField] PlayerStats playerStats;
 
     [Header("Effects")]
     [SerializeField] GameObject hitEffect;
@@ -30,6 +32,16 @@ public class Weapon : MonoBehaviour
 
     void Start()
     {
+        if (playerStats == null)
+        {
+            playerStats = GetComponentInParent<PlayerStats>();
+        }
+
+        if (playerStats == null)
+        {
+            playerStats = FindFirstObjectByType<PlayerStats>();
+        }
+
         originalPosition =
             weaponTransform.localPosition;
 
@@ -59,16 +71,21 @@ public class Weapon : MonoBehaviour
         // HOLD LEFT CLICK FOR FULL AUTO
         if (Input.GetMouseButton(0))
         {
+            bool triedToFire = false;
+            bool firedThisFrame = false;
+
             if (Time.time >= nextTimeToFire)
             {
+                triedToFire = true;
                 nextTimeToFire =
                     Time.time + fireRate;
 
-                Shoot();
+                firedThisFrame = Shoot();
             }
 
             // START AUDIO ONLY ONCE
-            if (!wasShootingLastFrame)
+            if (firedThisFrame &&
+                !wasShootingLastFrame)
             {
                 if (gunAudioSource != null &&
                     firingClip != null)
@@ -83,34 +100,28 @@ public class Weapon : MonoBehaviour
 
                 wasShootingLastFrame = true;
             }
+            else if (triedToFire &&
+                     !firedThisFrame &&
+                     wasShootingLastFrame)
+            {
+                StopFiringEffects();
+            }
         }
         else
         {
             // STOP AUDIO WHEN FIRE RELEASED
-            if (wasShootingLastFrame)
-            {
-                if (gunAudioSource != null)
-                {
-                    gunAudioSource.Stop();
-                }
-
-                wasShootingLastFrame = false;
-            }
-
-            // STOP MUZZLE FLASH
-            if (muzzleFlash != null)
-            {
-                muzzleFlash.Stop(
-                    true,
-                    ParticleSystemStopBehavior
-                        .StopEmittingAndClear
-                );
-            }
+            StopFiringEffects();
         }
     }
 
-    void Shoot()
+    bool Shoot()
     {
+        if (playerStats != null &&
+            !playerStats.UseAmmo(ammoPerShot))
+        {
+            return false;
+        }
+
         // PLAY MUZZLE FLASH
         if (muzzleFlash != null)
         {
@@ -166,7 +177,7 @@ public class Weapon : MonoBehaviour
             if (robot != null)
             {
                 robot.TakeDamage(damage);
-                return;
+                return true;
             }
 
             // HEALTH DAMAGE
@@ -177,6 +188,31 @@ public class Weapon : MonoBehaviour
             {
                 health.TakeDamage(damage);
             }
+        }
+
+        return true;
+    }
+
+    void StopFiringEffects()
+    {
+        if (wasShootingLastFrame)
+        {
+            if (gunAudioSource != null)
+            {
+                gunAudioSource.Stop();
+            }
+
+            wasShootingLastFrame = false;
+        }
+
+        // STOP MUZZLE FLASH
+        if (muzzleFlash != null)
+        {
+            muzzleFlash.Stop(
+                true,
+                ParticleSystemStopBehavior
+                    .StopEmittingAndClear
+            );
         }
     }
 }
