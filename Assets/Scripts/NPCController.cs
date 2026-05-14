@@ -6,9 +6,12 @@ public class NPCController : MonoBehaviour
     public float wanderRadius = 10f;
     public float wanderTime = 5f;
     public float fleeDistance = 8f;
-    public float walkSpeed = 1.5f;
-    public float sprintSpeed = 4f;
+    public float walkSpeed = 2f;
+    public float sprintSpeed = 3f;
     public float maxHealth = 50f;
+    public float damping = 0.15f;
+
+    public bool IsHostage { get; private set; } = false;
 
     Animator anim;
     NavMeshAgent agent;
@@ -16,7 +19,6 @@ public class NPCController : MonoBehaviour
     Vector3 startPos;
     float currentHealth;
     bool isDead = false;
-    bool isHostage = false;
 
     void Start()
     {
@@ -30,9 +32,9 @@ public class NPCController : MonoBehaviour
     void Update()
     {
         if (isDead) return;
-        if (isHostage) return;
+        if (IsHostage) return;
 
-        // Find closest enemy
+        // Find closest enemy to flee from
         Robot closestEnemy = null;
         float closestDistance = 999f;
         Robot[] enemies = FindObjectsByType<Robot>(FindObjectsSortMode.None);
@@ -47,8 +49,8 @@ public class NPCController : MonoBehaviour
             }
         }
 
-        // Run away if enemy is too close
         bool shouldFlee = false;
+
         if (closestEnemy != null && closestDistance < fleeDistance)
         {
             shouldFlee = true;
@@ -64,7 +66,6 @@ public class NPCController : MonoBehaviour
         }
         else
         {
-            // Wander around
             wanderTimer += Time.deltaTime;
             if (wanderTimer >= wanderTime)
             {
@@ -76,34 +77,30 @@ public class NPCController : MonoBehaviour
                     agent.speed = walkSpeed;
                     agent.SetDestination(hit.position);
                 }
-
                 wanderTimer = 0f;
             }
         }
 
-        // Snap to idle if close to destination
+        // Snap to idle if reached destination
         if (!agent.pathPending && agent.remainingDistance < agent.stoppingDistance + 0.1f)
         {
-            anim.SetFloat("Speed", 0f);
-            anim.SetFloat("MoveX", 0f);
-            anim.SetFloat("MoveY", 0f);
+            anim.SetFloat("Speed", 0f, damping, Time.deltaTime);
+            anim.SetFloat("MoveX", 0f, damping, Time.deltaTime);
+            anim.SetFloat("MoveY", 0f, damping, Time.deltaTime);
             anim.SetBool("IsSprinting", false);
             return;
         }
 
-        // Update animator
+        // Update animator with normalized direction
         float speed = agent.velocity.magnitude;
-        Vector3 localVelocity = transform.InverseTransformDirection(agent.velocity);
+        Vector3 localVelocity = transform.InverseTransformDirection(agent.velocity).normalized;
 
-        // Snap tiny strafe values to zero
-        if (Mathf.Abs(localVelocity.x) < 0.5f)
-        {
-            localVelocity.x = 0f;
-        }
+        if (Mathf.Abs(localVelocity.x) < 0.5f) localVelocity.x = 0f;
+        if (localVelocity.z < 0f) localVelocity.z = Mathf.Abs(localVelocity.z);
 
-        anim.SetFloat("Speed", speed, 0.15f, Time.deltaTime);
-        anim.SetFloat("MoveX", localVelocity.x, 0.15f, Time.deltaTime);
-        anim.SetFloat("MoveY", localVelocity.z, 0.15f, Time.deltaTime);
+        anim.SetFloat("Speed", speed, damping, Time.deltaTime);
+        anim.SetFloat("MoveX", localVelocity.x, damping, Time.deltaTime);
+        anim.SetFloat("MoveY", localVelocity.z, damping, Time.deltaTime);
         anim.SetBool("IsSprinting", shouldFlee);
     }
 
@@ -111,7 +108,7 @@ public class NPCController : MonoBehaviour
     {
         if (isDead) return;
 
-        isHostage = true;
+        IsHostage = true;
         anim.SetBool("IsHostage", true);
         agent.enabled = false;
         transform.SetParent(captor);
@@ -121,7 +118,7 @@ public class NPCController : MonoBehaviour
     {
         if (isDead) return;
 
-        isHostage = false;
+        IsHostage = false;
         anim.SetTrigger("ReleaseHostage");
         anim.SetBool("IsHostage", false);
         agent.enabled = true;

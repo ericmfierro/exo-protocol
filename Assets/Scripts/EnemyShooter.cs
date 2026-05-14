@@ -5,15 +5,13 @@ using StarterAssets;
 public class EnemyShooter : MonoBehaviour
 {
     [Header("Combat")]
-    public Transform player;
     public float attackRange = 15f;
     public float fireRate = 10f;
-    public float damage = 5f;
+    public float damage = 2f;
 
     [Header("Accuracy")]
     [Range(0f, 1f)]
     public float hitChance = 0.65f;
-
     public float horizontalSpread = 1.5f;
     public float verticalSpread = 0.4f;
 
@@ -25,230 +23,121 @@ public class EnemyShooter : MonoBehaviour
     [Header("Effects")]
     public ParticleSystem muzzleFlash;
 
-    [Header("Movement")]
-    public bool stopMovementWhileFiring = true;
-
     [Header("Rotation")]
     public float turnSpeed = 8f;
 
-    // Adjust depending on model facing
-    public Vector3 modelRotationOffset =
-        new Vector3(0f, 60f, 0f);
-
-    private PlayerStats playerStats;
-    private Animator anim;
-    private NavMeshAgent agent;
-
-    private float nextFireTime;
+    Transform player;
+    PlayerStats playerStats;
+    Animator anim;
+    NavMeshAgent agent;
+    float nextFireTime;
 
     void Start()
     {
         anim = GetComponent<Animator>();
         agent = GetComponent<NavMeshAgent>();
 
-        // Prevent NavMeshAgent rotation conflicts
-        if (agent != null)
+        FirstPersonController fpc = FindFirstObjectByType<FirstPersonController>();
+        if (fpc != null)
         {
-            agent.updateRotation = false;
-        }
-
-        // Auto-find player
-        if (player == null)
-        {
-            FirstPersonController fpc =
-                FindFirstObjectByType<FirstPersonController>();
-
-            if (fpc != null)
-            {
-                player = fpc.transform;
-            }
-        }
-
-        // Get player stats
-        if (player != null)
-        {
-            playerStats =
-                player.GetComponent<PlayerStats>();
+            player = fpc.transform;
+            playerStats = fpc.GetComponent<PlayerStats>();
         }
     }
 
     void Update()
     {
-        // PLAYER MISSING
         if (player == null)
         {
-            StopCombatAnimations();
+            StopFiring();
             return;
         }
 
-        // PLAYER DEAD
-        // Change "currentHealth" if needed
-        if (playerStats != null &&
-            playerStats.currentHealth <= 0)
+        if (playerStats != null && playerStats.currentHealth <= 0)
         {
-            StopCombatAnimations();
+            StopFiring();
             return;
         }
 
-        float distance =
-            Vector3.Distance(
-                transform.position,
-                player.position
-            );
+        float distance = Vector3.Distance(transform.position, player.position);
+        bool shouldAttack = distance <= attackRange;
 
-        bool shouldAttack =
-            distance <= attackRange;
-
-        // ONLY combat animation state now
-        anim.SetBool(
-            "Fire",
-            shouldAttack
-        );
+        anim.SetBool("Fire", shouldAttack);
 
         if (shouldAttack)
         {
-            // Stop movement while firing
-            if (agent != null &&
-                stopMovementWhileFiring)
+            // Stop the agent so we don't slide while shooting
+            if (agent != null)
             {
                 agent.isStopped = true;
+                agent.updateRotation = false;
             }
 
             RotateTowardPlayer();
 
-            // Automatic fire timing
             if (Time.time >= nextFireTime)
             {
                 FireShot();
-
-                nextFireTime =
-                    Time.time +
-                    (1f / fireRate);
+                nextFireTime = Time.time + (1f / fireRate);
             }
         }
         else
         {
-            StopCombatAnimations();
+            StopFiring();
         }
     }
 
     void RotateTowardPlayer()
     {
-        Vector3 direction =
-            player.position -
-            transform.position;
-
+        Vector3 direction = player.position - transform.position;
         direction.y = 0f;
 
-        if (direction.sqrMagnitude <= 0.01f)
-            return;
+        if (direction.sqrMagnitude <= 0.01f) return;
 
-        Quaternion targetRotation =
-            Quaternion.LookRotation(
-                direction.normalized
-            ) *
-            Quaternion.Euler(
-                modelRotationOffset
-            );
-
-        transform.rotation =
-            Quaternion.Slerp(
-                transform.rotation,
-                targetRotation,
-                turnSpeed * Time.deltaTime
-            );
+        Quaternion targetRotation = Quaternion.LookRotation(direction.normalized);
+        transform.rotation = Quaternion.Slerp(transform.rotation, targetRotation, turnSpeed * Time.deltaTime);
     }
 
     void FireShot()
     {
-        if (player == null ||
-            firePoint == null ||
-            tracerPrefab == null)
-        {
-            return;
-        }
+        if (firePoint == null || tracerPrefab == null) return;
 
-        // MUZZLE FLASH
-        if (muzzleFlash != null)
-        {
-            muzzleFlash.Emit(1);
-        }
+        if (muzzleFlash != null) muzzleFlash.Emit(1);
 
-        Vector3 startPos =
-            firePoint.position;
+        Vector3 startPos = firePoint.position;
+        Vector3 targetPos = player.position + Vector3.up * 1.2f;
 
-        // Aim near upper torso
-        Vector3 targetPos =
-            player.position +
-            Vector3.up * 1.2f;
-
-        // Spread
-        Vector3 spread =
-            new Vector3(
-                Random.Range(
-                    -horizontalSpread,
-                    horizontalSpread
-                ),
-
-                Random.Range(
-                    -verticalSpread,
-                    verticalSpread
-                ),
-
-                Random.Range(
-                    -horizontalSpread,
-                    horizontalSpread
-                )
-            );
-
+        Vector3 spread = new Vector3(
+            Random.Range(-horizontalSpread, horizontalSpread),
+            Random.Range(-verticalSpread, verticalSpread),
+            Random.Range(-horizontalSpread, horizontalSpread)
+        );
         targetPos += spread;
 
-        Vector3 direction =
-            (targetPos - startPos)
-            .normalized;
+        Vector3 direction = (targetPos - startPos).normalized;
+        Vector3 endPos = startPos + direction * tracerDistance;
 
-        Vector3 endPos =
-            startPos +
-            direction *
-            tracerDistance;
-
-        // SPAWN TRACER
-        GameObject tracerObj =
-            Instantiate(tracerPrefab);
-
-        Tracer tracer =
-            tracerObj.GetComponent<Tracer>();
-
+        GameObject tracerObj = Instantiate(tracerPrefab);
+        Tracer tracer = tracerObj.GetComponent<Tracer>();
         if (tracer != null)
         {
-            tracer.Setup(
-                startPos,
-                endPos
-            );
+            tracer.Setup(startPos, endPos);
         }
 
-        // DAMAGE
-        if (Random.value <= hitChance)
+        if (Random.value <= hitChance && playerStats != null)
         {
-            if (playerStats != null)
-            {
-                playerStats.TakeDamage(
-                    damage
-                );
-            }
+            playerStats.TakeDamage(damage);
         }
     }
 
-    void StopCombatAnimations()
+    void StopFiring()
     {
-        anim.SetBool(
-            "Fire",
-            false
-        );
+        if (anim != null) anim.SetBool("Fire", false);
 
         if (agent != null)
         {
             agent.isStopped = false;
+            agent.updateRotation = true;
         }
     }
 }

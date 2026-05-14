@@ -4,11 +4,13 @@ using UnityEngine;
 public class Weapon : MonoBehaviour
 {
     [SerializeField] float damage = 25f;
-    [SerializeField] float fireRate = 0.5f;
+    [SerializeField] float fireRate = 10f; // shots per second
     [SerializeField] GameObject hitEffect;
+    [SerializeField] GameObject tracerPrefab;
+    [SerializeField] Transform firePoint;
 
     StarterAssetsInputs starterAssetsInputs;
-    float nextTimeToFire = 0f;
+    float nextFireTime;
 
     void Awake()
     {
@@ -17,15 +19,11 @@ public class Weapon : MonoBehaviour
 
     void Update()
     {
-        if (starterAssetsInputs.shoot)
+        // Hold to fire
+        if (starterAssetsInputs.shoot && Time.time >= nextFireTime)
         {
-            if (Time.time >= nextTimeToFire)
-            {
-                nextTimeToFire = Time.time + fireRate;
-                Shoot();
-            }
-
-            starterAssetsInputs.ShootInput(false);
+            Shoot();
+            nextFireTime = Time.time + (1f / fireRate);
         }
     }
 
@@ -33,17 +31,29 @@ public class Weapon : MonoBehaviour
     {
         RaycastHit hit;
 
-        if (Physics.Raycast(
-            Camera.main.transform.position,
-            Camera.main.transform.forward,
-            out hit,
-            Mathf.Infinity))
+        Vector3 origin = Camera.main.transform.position;
+        Vector3 direction = Camera.main.transform.forward;
+
+        if (Physics.Raycast(origin, direction, out hit, Mathf.Infinity))
         {
+            // Spawn hit particle
             if (hitEffect != null)
             {
                 Instantiate(hitEffect, hit.point, Quaternion.LookRotation(hit.normal));
             }
 
+            // Spawn tracer if available
+            if (tracerPrefab != null && firePoint != null)
+            {
+                GameObject tracerObj = Instantiate(tracerPrefab);
+                Tracer tracer = tracerObj.GetComponent<Tracer>();
+                if (tracer != null)
+                {
+                    tracer.Setup(firePoint.position, hit.point);
+                }
+            }
+
+            // Damage robot if hit
             Robot robot = hit.collider.GetComponent<Robot>();
             if (robot != null)
             {
@@ -51,10 +61,11 @@ public class Weapon : MonoBehaviour
                 return;
             }
 
-            Health health = hit.collider.GetComponent<Health>();
-            if (health != null)
+            // Damage NPC if hit
+            NPCController npc = hit.collider.GetComponent<NPCController>();
+            if (npc != null)
             {
-                health.TakeDamage(damage);
+                npc.TakeDamage(damage);
             }
         }
     }

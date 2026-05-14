@@ -1,16 +1,18 @@
 using UnityEngine;
+using UnityEngine.AI;
 using System.Collections;
 
-public class EnemySpawner : MonoBehaviour
+public class RandomEnemySpawner : MonoBehaviour
 {
     public GameObject[] enemyPrefabs;
-    public Transform[] spawnPoints;
+    public float spawnRadius = 30f;
+    public float minDistanceFromPlayer = 15f;
     public int enemiesPerWave = 3;
     public float timeBetweenSpawns = 0.5f;
     public float timeBetweenWaves = 8f;
     public int extraEnemiesPerWave = 1;
     public int maxEnemiesPerWave = 10;
-    public float spawnRange = 50f;       // only spawn if player is within range
+    public float spawnRange = 50f;
     public bool spawnInfinitely = true;
 
     public int CurrentWave { get; private set; }
@@ -34,7 +36,6 @@ public class EnemySpawner : MonoBehaviour
 
         while (spawnInfinitely)
         {
-            // Only spawn if player is within range of this spawner
             if (player != null && Vector3.Distance(transform.position, player.position) > spawnRange)
             {
                 yield return new WaitForSeconds(2f);
@@ -65,27 +66,62 @@ public class EnemySpawner : MonoBehaviour
 
     void SpawnEnemy()
     {
-        if (enemyPrefabs.Length == 0 || spawnPoints.Length == 0) return;
+        if (enemyPrefabs.Length == 0) return;
+
+        Vector3 spawnPos = GetRandomSpawnPoint();
+
+        if (spawnPos == Vector3.zero) return;
 
         GameObject prefab = enemyPrefabs[Random.Range(0, enemyPrefabs.Length)];
-        Transform point = spawnPoints[Random.Range(0, spawnPoints.Length)];
-
-        GameObject enemy = Instantiate(prefab, point.position, point.rotation);
+        GameObject enemy = Instantiate(prefab, spawnPos, Quaternion.identity);
         enemiesAlive++;
 
-        EnemyDeathTracker tracker = enemy.AddComponent<EnemyDeathTracker>();
+        RandomSpawnerDeathTracker tracker = enemy.AddComponent<RandomSpawnerDeathTracker>();
         tracker.spawner = this;
+    }
+
+    Vector3 GetRandomSpawnPoint()
+    {
+        // Try up to 30 times to find a valid spawn point
+        for (int i = 0; i < 30; i++)
+        {
+            Vector3 randomDir = Random.insideUnitSphere * spawnRadius;
+            randomDir += transform.position;
+            randomDir.y = transform.position.y;
+
+            NavMeshHit hit;
+            if (NavMesh.SamplePosition(randomDir, out hit, spawnRadius, NavMesh.AllAreas))
+            {
+                // Make sure it's far enough from the player
+                if (player == null || Vector3.Distance(hit.position, player.position) >= minDistanceFromPlayer)
+                {
+                    return hit.position;
+                }
+            }
+        }
+
+        return Vector3.zero;
     }
 
     public void OnEnemyDied()
     {
         enemiesAlive--;
     }
+
+    // Show the spawn radius in the editor
+    void OnDrawGizmosSelected()
+    {
+        Gizmos.color = Color.red;
+        Gizmos.DrawWireSphere(transform.position, spawnRadius);
+
+        Gizmos.color = Color.yellow;
+        Gizmos.DrawWireSphere(transform.position, minDistanceFromPlayer);
+    }
 }
 
-public class EnemyDeathTracker : MonoBehaviour
+public class RandomSpawnerDeathTracker : MonoBehaviour
 {
-    [HideInInspector] public EnemySpawner spawner;
+    [HideInInspector] public RandomEnemySpawner spawner;
 
     void OnDestroy()
     {
