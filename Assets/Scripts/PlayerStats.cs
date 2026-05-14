@@ -1,17 +1,24 @@
+using System.Collections;
 using UnityEngine;
 using UnityEngine.Events;
+using UnityEngine.SceneManagement;
 
 public class PlayerStats : MonoBehaviour
 {
-    public float maxHealth = 100f;
+    public float maxHealth = 2000f;
     public float currentHealth;
 
     public int maxAmmo = 100;
     public int currentAmmo;
 
+    [Header("Scenes")]
+    [SerializeField] int gameOverSceneIndex = 2;
+
     public UnityEvent<float, float> OnHealthChanged;  // current, max
     public UnityEvent<int, int> OnAmmoChanged;         // current, max
     public UnityEvent OnPlayerDeath;
+
+    bool gameOverStarted;
 
     void Start()
     {
@@ -47,15 +54,50 @@ public class PlayerStats : MonoBehaviour
         {
             OnPlayerDeath?.Invoke();
             Debug.Log("PLAYER DOWN");
+            LoadGameOver();
         }
     }
 
     public bool UseAmmo(int amount)
     {
-        if (currentAmmo <= 0) return false;
+        if (amount <= 0) return true;
+        if (currentAmmo < amount)
+        {
+            if (currentAmmo <= 0)
+            {
+                StartCoroutine(LoadGameOverAfterShot());
+            }
 
-        currentAmmo = Mathf.Max(currentAmmo - amount, 0);
+            return false;
+        }
+
+        currentAmmo -= amount;
         OnAmmoChanged?.Invoke(currentAmmo, maxAmmo);
+
+        if (currentAmmo <= 0)
+        {
+            Debug.Log("OUT OF AMMO");
+            StartCoroutine(LoadGameOverAfterShot());
+        }
+
         return true;
+    }
+
+    IEnumerator LoadGameOverAfterShot()
+    {
+        yield return null;
+
+        if (currentAmmo <= 0)
+        {
+            LoadGameOver();
+        }
+    }
+
+    void LoadGameOver()
+    {
+        if (gameOverStarted) return;
+
+        gameOverStarted = true;
+        SceneManager.LoadScene(gameOverSceneIndex);
     }
 }

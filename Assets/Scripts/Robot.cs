@@ -58,6 +58,16 @@ public class Robot : MonoBehaviour
     {
         isDead = true;
 
+        if (KillChainManager.Instance != null)
+        {
+            KillChainManager.Instance.RegisterKill();
+        }
+
+        if (LevelManager.Instance != null)
+        {
+            LevelManager.Instance.EnemyKilled();
+        }
+
         // STOP NAVMESH
         NavMeshAgent agent =
             GetComponent<NavMeshAgent>();
