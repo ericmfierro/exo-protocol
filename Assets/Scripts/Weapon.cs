@@ -1,55 +1,64 @@
-using StarterAssets;
 using UnityEngine;
 
 public class Weapon : MonoBehaviour
 {
     [Header("Combat")]
     [SerializeField] float damage = 25f;
-
-    // Lower = faster automatic fire
     [SerializeField] float fireRate = 0.1f;
 
     [Header("Effects")]
     [SerializeField] GameObject hitEffect;
+    [SerializeField] ParticleSystem muzzleFlash;
 
     [Header("Audio")]
     [SerializeField] AudioSource gunAudioSource;
     [SerializeField] AudioClip firingClip;
 
-    StarterAssetsInputs starterAssetsInputs;
+    [Header("Recoil")]
+    [SerializeField] Transform weaponTransform;
+
+    [SerializeField] float recoilKickback = 0.06f;
+    [SerializeField] float recoilRotation = 2.5f;
+    [SerializeField] float recoilRecoverySpeed = 10f;
 
     float nextTimeToFire = 0f;
 
-    void Awake()
+    bool wasShootingLastFrame = false;
+
+    Vector3 originalPosition;
+    Quaternion originalRotation;
+
+    void Start()
     {
-        starterAssetsInputs =
-            GetComponentInParent<StarterAssetsInputs>();
+        originalPosition =
+            weaponTransform.localPosition;
+
+        originalRotation =
+            weaponTransform.localRotation;
     }
 
     void Update()
     {
-        // HOLD LEFT MOUSE FOR FULL AUTO
+        // SMOOTH RECOVERY
+        weaponTransform.localPosition =
+            Vector3.Lerp(
+                weaponTransform.localPosition,
+                originalPosition,
+                Time.deltaTime *
+                recoilRecoverySpeed
+            );
+
+        weaponTransform.localRotation =
+            Quaternion.Lerp(
+                weaponTransform.localRotation,
+                originalRotation,
+                Time.deltaTime *
+                recoilRecoverySpeed
+            );
+
+        // HOLD LEFT CLICK FOR FULL AUTO
         if (Input.GetMouseButton(0))
         {
-            // START FIRING AUDIO
-            if (gunAudioSource != null &&
-                firingClip != null)
-            {
-                if (!gunAudioSource.isPlaying)
-                {
-                    gunAudioSource.clip =
-                        firingClip;
-
-                    gunAudioSource.loop = true;
-
-                    gunAudioSource.pitch =
-                        Random.Range(0.98f, 1.02f);
-
-                    gunAudioSource.Play();
-                }
-            }
-
-            // FIRE RATE CONTROL
             if (Time.time >= nextTimeToFire)
             {
                 nextTimeToFire =
@@ -57,20 +66,79 @@ public class Weapon : MonoBehaviour
 
                 Shoot();
             }
+
+            // START AUDIO ONLY ONCE
+            if (!wasShootingLastFrame)
+            {
+                if (gunAudioSource != null &&
+                    firingClip != null)
+                {
+                    gunAudioSource.clip =
+                        firingClip;
+
+                    gunAudioSource.loop = true;
+
+                    gunAudioSource.Play();
+                }
+
+                wasShootingLastFrame = true;
+            }
         }
         else
         {
-            // STOP AUDIO IMMEDIATELY
-            if (gunAudioSource != null &&
-                gunAudioSource.isPlaying)
+            // STOP AUDIO WHEN FIRE RELEASED
+            if (wasShootingLastFrame)
             {
-                gunAudioSource.Stop();
+                if (gunAudioSource != null)
+                {
+                    gunAudioSource.Stop();
+                }
+
+                wasShootingLastFrame = false;
+            }
+
+            // STOP MUZZLE FLASH
+            if (muzzleFlash != null)
+            {
+                muzzleFlash.Stop(
+                    true,
+                    ParticleSystemStopBehavior
+                        .StopEmittingAndClear
+                );
             }
         }
     }
 
     void Shoot()
     {
+        // PLAY MUZZLE FLASH
+        if (muzzleFlash != null)
+        {
+            muzzleFlash.Stop(
+                true,
+                ParticleSystemStopBehavior
+                    .StopEmittingAndClear
+            );
+
+            muzzleFlash.Play();
+        }
+
+        // RECOIL POSITION
+        weaponTransform.localPosition -=
+            new Vector3(
+                0f,
+                0f,
+                recoilKickback
+            );
+
+        // RECOIL ROTATION
+        weaponTransform.localRotation *=
+            Quaternion.Euler(
+                -recoilRotation,
+                Random.Range(-0.5f, 0.5f),
+                0f
+            );
+
         RaycastHit hit;
 
         if (Physics.Raycast(
@@ -85,7 +153,9 @@ public class Weapon : MonoBehaviour
                 Instantiate(
                     hitEffect,
                     hit.point,
-                    Quaternion.LookRotation(hit.normal)
+                    Quaternion.LookRotation(
+                        hit.normal
+                    )
                 );
             }
 
@@ -99,7 +169,7 @@ public class Weapon : MonoBehaviour
                 return;
             }
 
-            // GENERIC HEALTH DAMAGE
+            // HEALTH DAMAGE
             Health health =
                 hit.collider.GetComponent<Health>();
 
