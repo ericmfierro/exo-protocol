@@ -3,29 +3,69 @@ using UnityEngine;
 
 public class Weapon : MonoBehaviour
 {
+    [Header("Combat")]
     [SerializeField] float damage = 25f;
-    [SerializeField] float fireRate = 0.5f;
+
+    // Lower = faster automatic fire
+    [SerializeField] float fireRate = 0.1f;
+
+    [Header("Effects")]
     [SerializeField] GameObject hitEffect;
 
+    [Header("Audio")]
+    [SerializeField] AudioSource gunAudioSource;
+    [SerializeField] AudioClip firingClip;
+
     StarterAssetsInputs starterAssetsInputs;
+
     float nextTimeToFire = 0f;
 
     void Awake()
     {
-        starterAssetsInputs = GetComponentInParent<StarterAssetsInputs>();
+        starterAssetsInputs =
+            GetComponentInParent<StarterAssetsInputs>();
     }
 
     void Update()
     {
-        if (starterAssetsInputs.shoot)
+        // HOLD LEFT MOUSE FOR FULL AUTO
+        if (Input.GetMouseButton(0))
         {
-            if (Time.time >= nextTimeToFire)
+            // START FIRING AUDIO
+            if (gunAudioSource != null &&
+                firingClip != null)
             {
-                nextTimeToFire = Time.time + fireRate;
-                Shoot();
+                if (!gunAudioSource.isPlaying)
+                {
+                    gunAudioSource.clip =
+                        firingClip;
+
+                    gunAudioSource.loop = true;
+
+                    gunAudioSource.pitch =
+                        Random.Range(0.98f, 1.02f);
+
+                    gunAudioSource.Play();
+                }
             }
 
-            starterAssetsInputs.ShootInput(false);
+            // FIRE RATE CONTROL
+            if (Time.time >= nextTimeToFire)
+            {
+                nextTimeToFire =
+                    Time.time + fireRate;
+
+                Shoot();
+            }
+        }
+        else
+        {
+            // STOP AUDIO IMMEDIATELY
+            if (gunAudioSource != null &&
+                gunAudioSource.isPlaying)
+            {
+                gunAudioSource.Stop();
+            }
         }
     }
 
@@ -39,19 +79,30 @@ public class Weapon : MonoBehaviour
             out hit,
             Mathf.Infinity))
         {
+            // HIT EFFECT
             if (hitEffect != null)
             {
-                Instantiate(hitEffect, hit.point, Quaternion.LookRotation(hit.normal));
+                Instantiate(
+                    hitEffect,
+                    hit.point,
+                    Quaternion.LookRotation(hit.normal)
+                );
             }
 
-            Robot robot = hit.collider.GetComponent<Robot>();
+            // ROBOT DAMAGE
+            Robot robot =
+                hit.collider.GetComponent<Robot>();
+
             if (robot != null)
             {
                 robot.TakeDamage(damage);
                 return;
             }
 
-            Health health = hit.collider.GetComponent<Health>();
+            // GENERIC HEALTH DAMAGE
+            Health health =
+                hit.collider.GetComponent<Health>();
+
             if (health != null)
             {
                 health.TakeDamage(damage);
