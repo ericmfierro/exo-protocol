@@ -442,6 +442,61 @@ RectTransform:
   m_AnchoredPosition: {x: -100, y: 25}
   m_SizeDelta: {x: 200, y: 50}
   m_Pivot: {x: 0.5, y: 0.5}
+--- !u!1 &228469118
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 228469120}
+  - component: {fileID: 228469119}
+  m_Layer: 0
+  m_Name: RandomSpawner
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!114 &228469119
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 228469118}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 7c855fa9253ea644592f7c0613e9fed1, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::RandomEnemySpawner
+  enemyPrefabs:
+  - {fileID: 2114798831}
+  spawnRadius: 30
+  minDistanceFromPlayer: 15
+  enemiesPerWave: 3
+  timeBetweenSpawns: 0.5
+  timeBetweenWaves: 8
+  extraEnemiesPerWave: 1
+  maxEnemiesPerWave: 10
+  spawnRange: 50
+  spawnInfinitely: 1
+--- !u!4 &228469120
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 228469118}
+  serializedVersion: 2
+  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
+  m_LocalPosition: {x: -1.1387, y: 1.55065, z: -4.07548}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children: []
+  m_Father: {fileID: 0}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!1 &261029490
 GameObject:
   m_ObjectHideFlags: 0
@@ -6297,7 +6352,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 8000b06f86e99aa448fd23b902c77b73, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::PlayerStats
-  maxHealth: 20000
+  maxHealth: 100
   currentHealth: 0
   maxAmmo: 100
   currentAmmo: 0
@@ -6544,7 +6599,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::SanitySystem
   maxSanity: 100
   currentSanity: 100
-  passiveDrainRate: 10
+  passiveDrainRate: 1
   psychosisSourceA: {fileID: 746743495}
   psychosisSourceB: {fileID: 746743495}
   level1Clips:
@@ -6923,6 +6978,8 @@ MonoBehaviour:
   timeBetweenWaves: 5
   extraEnemiesPerWave: 1
   maxEnemiesPerWave: 15
+  spawnRange: 50
+  spawnInfinitely: 1
 --- !u!4 &1088683403
 Transform:
   m_ObjectHideFlags: 0
@@ -8903,6 +8960,63 @@ RectTransform:
   m_AnchoredPosition: {x: -5, y: 0}
   m_SizeDelta: {x: -20, y: 0}
   m_Pivot: {x: 0.5, y: 0.5}
+--- !u!1001 &2080430503
+PrefabInstance:
+  m_ObjectHideFlags: 0
+  serializedVersion: 2
+  m_Modification:
+    serializedVersion: 3
+    m_TransformParent: {fileID: 0}
+    m_Modifications:
+    - target: {fileID: 7275193639981314699, guid: e24ec2f6f83dd10498f03d3473bef5cc, type: 3}
+      propertyPath: m_Name
+      value: NPC (1)
+      objectReference: {fileID: 0}
+    - target: {fileID: 8051731061135386673, guid: e24ec2f6f83dd10498f03d3473bef5cc, type: 3}
+      propertyPath: m_LocalPosition.x
+      value: 1.35442
+      objectReference: {fileID: 0}
+    - target: {fileID: 8051731061135386673, guid: e24ec2f6f83dd10498f03d3473bef5cc, type: 3}
+      propertyPath: m_LocalPosition.y
+      value: 1.55065
+      objectReference: {fileID: 0}
+    - target: {fileID: 8051731061135386673, guid: e24ec2f6f83dd10498f03d3473bef5cc, type: 3}
+      propertyPath: m_LocalPosition.z
+      value: -0.8505
+      objectReference: {fileID: 0}
+    - target: {fileID: 8051731061135386673, guid: e24ec2f6f83dd10498f03d3473bef5cc, type: 3}
+      propertyPath: m_LocalRotation.w
+      value: -0.0018029627
+      objectReference: {fileID: 0}
+    - target: {fileID: 8051731061135386673, guid: e24ec2f6f83dd10498f03d3473bef5cc, type: 3}
+      propertyPath: m_LocalRotation.x
+      value: -0
+      objectReference: {fileID: 0}
+    - target: {fileID: 8051731061135386673, guid: e24ec2f6f83dd10498f03d3473bef5cc, type: 3}
+      propertyPath: m_LocalRotation.y
+      value: 0.99999845
+      objectReference: {fileID: 0}
+    - target: {fileID: 8051731061135386673, guid: e24ec2f6f83dd10498f03d3473bef5cc, type: 3}
+      propertyPath: m_LocalRotation.z
+      value: -0
+      objectReference: {fileID: 0}
+    - target: {fileID: 8051731061135386673, guid: e24ec2f6f83dd10498f03d3473bef5cc, type: 3}
+      propertyPath: m_LocalEulerAnglesHint.x
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 8051731061135386673, guid: e24ec2f6f83dd10498f03d3473bef5cc, type: 3}
+      propertyPath: m_LocalEulerAnglesHint.y
+      value: 180.207
+      objectReference: {fileID: 0}
+    - target: {fileID: 8051731061135386673, guid: e24ec2f6f83dd10498f03d3473bef5cc, type: 3}
+      propertyPath: m_LocalEulerAnglesHint.z
+      value: 0
+      objectReference: {fileID: 0}
+    m_RemovedComponents: []
+    m_RemovedGameObjects: []
+    m_AddedGameObjects: []
+    m_AddedComponents: []
+  m_SourcePrefab: {fileID: 100100000, guid: e24ec2f6f83dd10498f03d3473bef5cc, type: 3}
 --- !u!1 &2087716640
 GameObject:
   m_ObjectHideFlags: 0
@@ -9359,8 +9473,16 @@ PrefabInstance:
       value: 
       objectReference: {fileID: 605866320}
     - target: {fileID: -5264891602683721775, guid: d1b8b0d594d59b047b2b566c701a738b, type: 3}
+      propertyPath: firingRotationOffset
+      value: 60
+      objectReference: {fileID: 0}
+    - target: {fileID: -5264891602683721775, guid: d1b8b0d594d59b047b2b566c701a738b, type: 3}
       propertyPath: modelRotationOffset.y
       value: 60
+      objectReference: {fileID: 0}
+    - target: {fileID: 2088335772442579957, guid: d1b8b0d594d59b047b2b566c701a738b, type: 3}
+      propertyPath: m_ApplyRootMotion
+      value: 1
       objectReference: {fileID: 0}
     - target: {fileID: 4706470698466661173, guid: d1b8b0d594d59b047b2b566c701a738b, type: 3}
       propertyPath: m_Name
@@ -9486,3 +9608,5 @@ SceneRoots:
   - {fileID: 3946643709165407025}
   - {fileID: 1483049808}
   - {fileID: 1918014365}
+  - {fileID: 228469120}
+  - {fileID: 2080430503}

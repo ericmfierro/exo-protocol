@@ -67,6 +67,6 @@
         "*.sln": "*.csproj",
         "*.slnx": "*.csproj"
     },
-    "dotnet.defaultSolution": "exo-protocol.slnx",
+    "dotnet.defaultSolution": "Sharpshooter.slnx",
     "dotnet.enableWorkspaceBasedDevelopment": false
 }

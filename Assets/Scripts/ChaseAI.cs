@@ -6,22 +6,34 @@ public class ChaseAI : MonoBehaviour
 {
     public float detectionRange = 20f;
 
-    private Transform player;
-    private NavMeshAgent agent;
-    private EnemyShooter shooter;
+    [Header("Movement")]
+    public float walkSpeed = 1.5f;
+    public float runSpeed = 3.5f;
+    public float sprintSpeed = 5.5f;
+
+    [Header("Patrol")]
+    public float patrolRadius = 15f;
+    public float patrolWaitTime = 3f;
+
+    NavMeshAgent agent;
+    Transform player;
+    HostageGrabber grabber;
+    EnemyShooter shooter;
+
+    Vector3 startPos;
+    float waitTimer;
 
     void Start()
     {
         agent = GetComponent<NavMeshAgent>();
+
+        grabber = GetComponent<HostageGrabber>();
         shooter = GetComponent<EnemyShooter>();
 
-        // Prevent NavMeshAgent from fighting rotation
-        if (agent != null)
-        {
-            agent.updateRotation = false;
-        }
+        startPos = transform.position;
 
-        // Auto-find player
+        waitTimer = patrolWaitTime;
+
         FirstPersonController fpc =
             FindFirstObjectByType<FirstPersonController>();
 
@@ -33,27 +45,81 @@ public class ChaseAI : MonoBehaviour
 
     void Update()
     {
-        if (player == null || agent == null)
+        if (player == null ||
+            agent == null ||
+            !agent.enabled)
+        {
             return;
+        }
 
-        float distance =
-            Vector3.Distance(transform.position, player.position);
-
-        // If enemy is shooting, stop chasing
-        if (shooter != null &&
-            distance <= shooter.attackRange)
+        if (grabber != null &&
+            grabber.HasHostage)
         {
             agent.isStopped = true;
             return;
         }
 
-        // Resume movement
-        agent.isStopped = false;
+        float distance =
+            Vector3.Distance(
+                transform.position,
+                player.position
+            );
 
-        // Chase player
-        if (distance <= detectionRange)
+        // Close range = aggressive sprint
+        if (distance < 8f)
         {
-            agent.SetDestination(player.position);
+            agent.speed = sprintSpeed;
+        }
+        // Medium range = run
+        else if (distance < detectionRange)
+        {
+            agent.speed = runSpeed;
+        }
+        // Patrol
+        else
+        {
+            agent.speed = walkSpeed;
+        }
+
+        if (distance < detectionRange)
+        {
+            agent.SetDestination(
+                player.position
+            );
+        }
+        else
+        {
+            Patrol();
+        }
+    }
+
+    void Patrol()
+    {
+        if (!agent.pathPending &&
+            agent.remainingDistance < 1f)
+        {
+            waitTimer += Time.deltaTime;
+
+            if (waitTimer >= patrolWaitTime)
+            {
+                Vector3 randomDir =
+                    Random.insideUnitSphere *
+                    patrolRadius +
+                    startPos;
+
+                NavMeshHit hit;
+
+                if (NavMesh.SamplePosition(
+                    randomDir,
+                    out hit,
+                    patrolRadius,
+                    NavMesh.AllAreas))
+                {
+                    agent.SetDestination(hit.position);
+                }
+
+                waitTimer = 0f;
+            }
         }
     }
 }
