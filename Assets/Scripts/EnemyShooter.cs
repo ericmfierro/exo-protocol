@@ -23,6 +23,13 @@ public class EnemyShooter : MonoBehaviour
     [Header("Effects")]
     public ParticleSystem muzzleFlash;
 
+    [Header("Audio")]
+    public AudioSource gunAudioSource;
+    public AudioClip firingClip;
+
+    [Header("Movement")]
+    public bool stopMovementWhileFiring = true;
+
     [Header("Rotation")]
     public float turnSpeed = 8f;
 
@@ -49,13 +56,15 @@ public class EnemyShooter : MonoBehaviour
     {
         if (player == null)
         {
-            StopFiring();
+            StopCombatAnimations();
+            StopGunAudio();
             return;
         }
 
         if (playerStats != null && playerStats.currentHealth <= 0)
         {
-            StopFiring();
+            StopCombatAnimations();
+            StopGunAudio();
             return;
         }
 
@@ -66,14 +75,27 @@ public class EnemyShooter : MonoBehaviour
 
         if (shouldAttack)
         {
-            // Stop the agent so we don't slide while shooting
             if (agent != null)
             {
-                agent.isStopped = true;
+                if (stopMovementWhileFiring)
+                {
+                    agent.isStopped = true;
+                }
                 agent.updateRotation = false;
             }
 
             RotateTowardPlayer();
+
+            if (gunAudioSource != null && firingClip != null)
+            {
+                if (!gunAudioSource.isPlaying)
+                {
+                    gunAudioSource.clip = firingClip;
+                    gunAudioSource.loop = true;
+                    gunAudioSource.pitch = Random.Range(0.95f, 1.05f);
+                    gunAudioSource.Play();
+                }
+            }
 
             if (Time.time >= nextFireTime)
             {
@@ -83,7 +105,8 @@ public class EnemyShooter : MonoBehaviour
         }
         else
         {
-            StopFiring();
+            StopCombatAnimations();
+            StopGunAudio();
         }
     }
 
@@ -100,9 +123,12 @@ public class EnemyShooter : MonoBehaviour
 
     void FireShot()
     {
-        if (firePoint == null || tracerPrefab == null) return;
+        if (player == null || firePoint == null || tracerPrefab == null) return;
 
-        if (muzzleFlash != null) muzzleFlash.Emit(1);
+        if (muzzleFlash != null)
+        {
+            muzzleFlash.Emit(1);
+        }
 
         Vector3 startPos = firePoint.position;
         Vector3 targetPos = player.position + Vector3.up * 1.2f;
@@ -130,9 +156,12 @@ public class EnemyShooter : MonoBehaviour
         }
     }
 
-    void StopFiring()
+    void StopCombatAnimations()
     {
-        if (anim != null) anim.SetBool("Fire", false);
+        if (anim != null)
+        {
+            anim.SetBool("Fire", false);
+        }
 
         if (agent != null)
         {
@@ -140,4 +169,13 @@ public class EnemyShooter : MonoBehaviour
             agent.updateRotation = true;
         }
     }
+
+    void StopGunAudio()
+    {
+        if (gunAudioSource != null && gunAudioSource.isPlaying)
+        {
+            gunAudioSource.Stop();
+        }
+    }
 }
+
