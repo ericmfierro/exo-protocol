@@ -1,5 +1,6 @@
 using UnityEngine;
 using UnityEngine.UI;
+using UnityEngine.AI;
 
 public class Robot : MonoBehaviour
 {
@@ -39,8 +40,6 @@ public class Robot : MonoBehaviour
         }
     }
 
-    // IMPORTANT:
-    // Needed by EliteAI
     public float GetHealthPercent()
     {
         return currentHealth / maxHealth;
@@ -59,11 +58,64 @@ public class Robot : MonoBehaviour
     {
         isDead = true;
 
+        // STOP NAVMESH
+        NavMeshAgent agent =
+            GetComponent<NavMeshAgent>();
+
+        if (agent != null && agent.enabled)
+        {
+            agent.isStopped = true;
+            agent.enabled = false;
+        }
+
+        // STOP AI
+        ChaseAI chaseAI =
+            GetComponent<ChaseAI>();
+
+        if (chaseAI != null)
+        {
+            chaseAI.enabled = false;
+        }
+
+        PatrolAI patrolAI =
+            GetComponent<PatrolAI>();
+
+        if (patrolAI != null)
+        {
+            patrolAI.enabled = false;
+        }
+
+        // STOP SHOOTING
+        EnemyShooter shooter =
+            GetComponent<EnemyShooter>();
+
+        if (shooter != null)
+        {
+            shooter.enabled = false;
+        }
+
+        // DISABLE COLLIDERS
+        Collider[] colliders =
+            GetComponentsInChildren<Collider>();
+
+        foreach (Collider col in colliders)
+        {
+            col.enabled = false;
+        }
+
+        // RESET MOVEMENT ANIMATION
         if (anim != null)
         {
+            anim.SetFloat("MoveX", 0);
+            anim.SetFloat("MoveY", 0);
+            anim.SetFloat("Speed", 0);
+
+            anim.SetBool("Fire", false);
+
+            // PLAY DEATH
             anim.SetBool("IsDead", true);
         }
 
-        Destroy(gameObject, 3f);
+        Destroy(gameObject, 4f);
     }
 }

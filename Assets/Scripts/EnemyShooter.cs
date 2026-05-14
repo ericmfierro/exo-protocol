@@ -5,17 +5,13 @@ using StarterAssets;
 public class EnemyShooter : MonoBehaviour
 {
     [Header("Combat")]
-    public Transform player;
     public float attackRange = 15f;
     public float fireRate = 10f;
-    public float damage = 5f;
+    public float damage = 2f;
 
     [Header("Accuracy")]
     [Range(0f, 1f)]
     public float hitChance = 0.65f;
-
-    public float horizontalSpread = 1.5f;
-    public float verticalSpread = 0.4f;
 
     [Header("Tracer")]
     public GameObject tracerPrefab;
@@ -25,150 +21,125 @@ public class EnemyShooter : MonoBehaviour
     [Header("Effects")]
     public ParticleSystem muzzleFlash;
 
-    [Header("Movement")]
-    public bool stopMovementWhileFiring = true;
+    [Header("Audio")]
+    public AudioSource gunAudioSource;
+    public AudioClip firingClip;
 
     [Header("Rotation")]
-    public float turnSpeed = 8f;
+    public float turnSpeed = 15f;
 
-    // Adjust depending on model facing
-    public Vector3 modelRotationOffset =
-        new Vector3(0f, 60f, 0f);
+    [Tooltip("Use this if the enemy model/fire animation is not visually facing the player. Try 0, 90, -90, or 180.")]
+    public float firingRotationOffset = 0f;
 
-    private PlayerStats playerStats;
-    private Animator anim;
-    private NavMeshAgent agent;
+    Transform player;
+    PlayerStats playerStats;
+    Animator anim;
+    NavMeshAgent agent;
 
-    private float nextFireTime;
+    float nextFireTime;
 
     void Start()
     {
         anim = GetComponent<Animator>();
         agent = GetComponent<NavMeshAgent>();
 
-        // Prevent NavMeshAgent rotation conflicts
-        if (agent != null)
-        {
-            agent.updateRotation = false;
-        }
+        FirstPersonController fpc =
+            FindFirstObjectByType<FirstPersonController>();
 
-        // Auto-find player
-        if (player == null)
+        if (fpc != null)
         {
-            FirstPersonController fpc =
-                FindFirstObjectByType<FirstPersonController>();
-
-            if (fpc != null)
-            {
-                player = fpc.transform;
-            }
-        }
-
-        // Get player stats
-        if (player != null)
-        {
-            playerStats =
-                player.GetComponent<PlayerStats>();
+            player = fpc.transform;
+            playerStats = fpc.GetComponent<PlayerStats>();
         }
     }
 
     void Update()
     {
-        // PLAYER MISSING
         if (player == null)
         {
-            StopCombatAnimations();
+            StopCombat();
             return;
         }
 
-        // PLAYER DEAD
-        // Change "currentHealth" if needed
         if (playerStats != null &&
             playerStats.currentHealth <= 0)
         {
-            StopCombatAnimations();
+            StopCombat();
             return;
         }
 
         float distance =
-            Vector3.Distance(
-                transform.position,
-                player.position
-            );
+            Vector3.Distance(transform.position, player.position);
 
         bool shouldAttack =
             distance <= attackRange;
 
-        // ONLY combat animation state now
-        anim.SetBool(
-            "Fire",
-            shouldAttack
-        );
+        if (anim != null)
+        {
+            anim.SetBool("Fire", shouldAttack);
+        }
 
         if (shouldAttack)
         {
-            // Stop movement while firing
-            if (agent != null &&
-                stopMovementWhileFiring)
+            if (agent != null && agent.enabled)
             {
                 agent.isStopped = true;
+                agent.updateRotation = false;
             }
 
             RotateTowardPlayer();
 
-            // Automatic fire timing
+            StartGunAudio();
+
             if (Time.time >= nextFireTime)
             {
                 FireShot();
 
                 nextFireTime =
-                    Time.time +
-                    (1f / fireRate);
+                    Time.time + (1f / fireRate);
             }
         }
         else
         {
-            StopCombatAnimations();
+            StopCombat();
         }
     }
 
     void RotateTowardPlayer()
     {
+        if (player == null)
+            return;
+
         Vector3 direction =
-            player.position -
-            transform.position;
+            player.position - transform.position;
 
         direction.y = 0f;
 
-        if (direction.sqrMagnitude <= 0.01f)
+        if (direction.sqrMagnitude < 0.01f)
             return;
 
+        Quaternion lookRotation =
+            Quaternion.LookRotation(direction.normalized);
+
+        Quaternion offsetRotation =
+            Quaternion.Euler(0f, firingRotationOffset, 0f);
+
         Quaternion targetRotation =
-            Quaternion.LookRotation(
-                direction.normalized
-            ) *
-            Quaternion.Euler(
-                modelRotationOffset
-            );
+            lookRotation * offsetRotation;
 
         transform.rotation =
-            Quaternion.Slerp(
+            Quaternion.RotateTowards(
                 transform.rotation,
                 targetRotation,
-                turnSpeed * Time.deltaTime
+                turnSpeed * 120f * Time.deltaTime
             );
     }
 
     void FireShot()
     {
-        if (player == null ||
-            firePoint == null ||
-            tracerPrefab == null)
-        {
+        if (firePoint == null)
             return;
-        }
 
-        // MUZZLE FLASH
         if (muzzleFlash != null)
         {
             muzzleFlash.Emit(1);
@@ -177,78 +148,70 @@ public class EnemyShooter : MonoBehaviour
         Vector3 startPos =
             firePoint.position;
 
-        // Aim near upper torso
         Vector3 targetPos =
-            player.position +
-            Vector3.up * 1.2f;
-
-        // Spread
-        Vector3 spread =
-            new Vector3(
-                Random.Range(
-                    -horizontalSpread,
-                    horizontalSpread
-                ),
-
-                Random.Range(
-                    -verticalSpread,
-                    verticalSpread
-                ),
-
-                Random.Range(
-                    -horizontalSpread,
-                    horizontalSpread
-                )
-            );
-
-        targetPos += spread;
+            player.position + Vector3.up * 1.2f;
 
         Vector3 direction =
-            (targetPos - startPos)
-            .normalized;
+            (targetPos - startPos).normalized;
 
         Vector3 endPos =
-            startPos +
-            direction *
-            tracerDistance;
+            startPos + direction * tracerDistance;
 
-        // SPAWN TRACER
-        GameObject tracerObj =
-            Instantiate(tracerPrefab);
-
-        Tracer tracer =
-            tracerObj.GetComponent<Tracer>();
-
-        if (tracer != null)
+        if (tracerPrefab != null)
         {
-            tracer.Setup(
-                startPos,
-                endPos
-            );
+            GameObject tracerObj =
+                Instantiate(tracerPrefab);
+
+            Tracer tracer =
+                tracerObj.GetComponent<Tracer>();
+
+            if (tracer != null)
+            {
+                tracer.Setup(startPos, endPos);
+            }
         }
 
-        // DAMAGE
-        if (Random.value <= hitChance)
+        if (Random.value <= hitChance &&
+            playerStats != null)
         {
-            if (playerStats != null)
-            {
-                playerStats.TakeDamage(
-                    damage
-                );
-            }
+            playerStats.TakeDamage(damage);
         }
     }
 
-    void StopCombatAnimations()
+    void StartGunAudio()
     {
-        anim.SetBool(
-            "Fire",
-            false
-        );
+        if (gunAudioSource != null &&
+            firingClip != null &&
+            !gunAudioSource.isPlaying)
+        {
+            gunAudioSource.clip = firingClip;
+            gunAudioSource.loop = true;
+            gunAudioSource.Play();
+        }
+    }
 
-        if (agent != null)
+    void StopGunAudio()
+    {
+        if (gunAudioSource != null &&
+            gunAudioSource.isPlaying)
+        {
+            gunAudioSource.Stop();
+        }
+    }
+
+    void StopCombat()
+    {
+        if (anim != null)
+        {
+            anim.SetBool("Fire", false);
+        }
+
+        StopGunAudio();
+
+        if (agent != null && agent.enabled)
         {
             agent.isStopped = false;
+            agent.updateRotation = true;
         }
     }
 }

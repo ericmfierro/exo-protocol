@@ -1,41 +1,52 @@
 using UnityEngine;
 using System.Collections;
 
-// Wave based enemy spawner
 public class EnemySpawner : MonoBehaviour
 {
-    [Header("Spawning")]
-    [SerializeField] GameObject[] enemyPrefabs;     // supports multiple enemy types
-    [SerializeField] Transform[] spawnPoints;
-    [SerializeField] int enemiesPerWave = 4;
-    [SerializeField] float timeBetweenSpawns = 0.5f;
-    [SerializeField] float timeBetweenWaves = 5f;
-
-    [Header("Scaling")]
-    [SerializeField] int extraEnemiesPerWave = 1;
-    [SerializeField] int maxEnemiesPerWave = 15;
+    public GameObject[] enemyPrefabs;
+    public Transform[] spawnPoints;
+    public int enemiesPerWave = 3;
+    public float timeBetweenSpawns = 0.5f;
+    public float timeBetweenWaves = 8f;
+    public int extraEnemiesPerWave = 1;
+    public int maxEnemiesPerWave = 10;
+    public float spawnRange = 50f;       // only spawn if player is within range
+    public bool spawnInfinitely = true;
 
     public int CurrentWave { get; private set; }
     int enemiesAlive;
+    Transform player;
 
     void Start()
     {
+        GameObject playerObj = GameObject.FindGameObjectWithTag("Player");
+        if (playerObj != null)
+        {
+            player = playerObj.transform;
+        }
+
         StartCoroutine(SpawnWaves());
     }
 
     IEnumerator SpawnWaves()
     {
-        // Small delay so LevelManager initializes first
         yield return new WaitForSeconds(1f);
 
-        while (true)
+        while (spawnInfinitely)
         {
+            // Only spawn if player is within range of this spawner
+            if (player != null && Vector3.Distance(transform.position, player.position) > spawnRange)
+            {
+                yield return new WaitForSeconds(2f);
+                continue;
+            }
+
             CurrentWave++;
             int count = Mathf.Min(
                 enemiesPerWave + (CurrentWave - 1) * extraEnemiesPerWave,
                 maxEnemiesPerWave);
 
-            Debug.Log($"=== WAVE {CurrentWave} === Spawning {count} enemies");
+            Debug.Log(name + " Wave " + CurrentWave + " spawning " + count);
 
             for (int i = 0; i < count; i++)
             {
@@ -43,13 +54,11 @@ public class EnemySpawner : MonoBehaviour
                 yield return new WaitForSeconds(timeBetweenSpawns);
             }
 
-            // Wait for all enemies to die
             while (enemiesAlive > 0)
             {
                 yield return null;
             }
 
-            Debug.Log($"Wave {CurrentWave} cleared!");
             yield return new WaitForSeconds(timeBetweenWaves);
         }
     }
@@ -58,29 +67,22 @@ public class EnemySpawner : MonoBehaviour
     {
         if (enemyPrefabs.Length == 0 || spawnPoints.Length == 0) return;
 
-        // Pick a random prefab and spawn point
         GameObject prefab = enemyPrefabs[Random.Range(0, enemyPrefabs.Length)];
         Transform point = spawnPoints[Random.Range(0, spawnPoints.Length)];
 
         GameObject enemy = Instantiate(prefab, point.position, point.rotation);
         enemiesAlive++;
 
-        // Track death so we know when the wave is cleared
-        Robot robot = enemy.GetComponent<Robot>();
-        if (robot != null)
-        {
-            // Need to track when robot dies
-            EnemyDeathTracker tracker = enemy.AddComponent<EnemyDeathTracker>();
-            tracker.spawner = this;
-        }
+        EnemyDeathTracker tracker = enemy.AddComponent<EnemyDeathTracker>();
+        tracker.spawner = this;
     }
+
     public void OnEnemyDied()
     {
         enemiesAlive--;
     }
 }
 
-// Helper that notifies the spawner when this enemy is killed
 public class EnemyDeathTracker : MonoBehaviour
 {
     [HideInInspector] public EnemySpawner spawner;
